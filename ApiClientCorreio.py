@@ -3,8 +3,9 @@ import base64
 import requests
 import json
 import math
+import data_defaults as data_c
 
-class pyCorreios:
+class ApiClientCorreios:
     default_url = 'https://api.correios.com.br/'
     def __init__(self, user, acess_code, post_card, contract, token):
         self.url = ''
@@ -66,6 +67,8 @@ class pyCorreios:
 
             elif(respose.status_code == 500):
                 print('Erro no servidor , tente novamente mais tarde')
+            else:
+                print(respose.content)
             return None
         
         elif(mode == 'contrato'):
@@ -89,6 +92,8 @@ class pyCorreios:
 
             elif(respose.status_code == 500):
                 print('Erro no servidor , tente novamente mais tarde')
+            else:
+                print(respose.content)
 
         elif(mode == ''):
             
@@ -110,6 +115,8 @@ class pyCorreios:
 
             elif(respose.status_code == 500):
                 print('Erro no servidor , tente novamente mais tarde')
+            else:
+                print(respose.content)
         
         else:
             raise ValueError("Modo de autenticação não reconhecido.")
@@ -117,6 +124,7 @@ class pyCorreios:
     def header(self):
 
         header = {'accept': 'application/json',
+                'Content-Type': 'application/json',
                 'Authorization': f'Bearer {self.token}'}
 
 
@@ -152,13 +160,13 @@ class pyCorreios:
         Exemplo:
             Para rastrear pacotes com códigos 'ABC123' e 'DEF456':
 
-            >>> tracker = pyCorreios(args)
+            >>> tracker = ApiClientCorreios(args)
             >>> result = tracker.tracking_package('U', 'AA000000000BR', 'AA000000001BR')
             >>> print(result)
 
             ou 
 
-            >>> tracker = pyCorreios(args)
+            >>> tracker = ApiClientCorreios(args)
             >>> result = tracker.tracking_package('U', ('AA000000000BR', 'AA000000001BR'))
             >>> print(result)
         """
@@ -235,6 +243,73 @@ class pyCorreios:
         return tracking_list
                 
 
+    def delivery_forecast(self, types, *args):
+
+        """
+        Consulta a previsão de entrega para os tipos de produtos especificados.
+
+        Args:
+            types (list): Uma lista de códigos de produtos para os quais se deseja obter previsão de entrega
+            (estes codigos podem serem encontrados ao fazer simulação so site dos correios empresas.correios... 
+            ou atraves do manual do SIGEP).
+            *args: Argumentos contendo informações sobre os locais de origem (CEP) e destino (CEP), 
+                bem como a data de postagem e a data do evento (dia atual). A ordem dos argumentos é:
+                cepOrigem, cepDestino, dataPostagem, dtEvento.
+
+        Returns:
+            dict or None: Um dicionário contendo as previsões de entrega para cada produto, 
+                        conforme retornadas pela API dos Correios. Retorna None em caso de erro 
+                        na solicitação.
+
+        Raises:
+            Exception: Se a solicitação para a API dos Correios falhar por qualquer motivo.
+
+        Example:
+            # Exemplo de uso:
+            api = CorreiosAPI(api_key)
+            forecast = api.delivery_forecast(['03220', '03298'], '01000-000', '04000-000', 
+                                            '2024-04-04', '2024-04-05')
+            if forecast:
+                print("Previsão de entrega:")
+                for item in forecast['parametrosPrazo']:
+                    print(f"Produto: {item['coProduto']}")
+                    print(f"Prazo de entrega: {item['prazoEntrega']} dias")
+            else:
+                print("Falha ao obter previsão de entrega.")
+        """
+
+        self.url = f'{self.default_url}prazo/v1/nacional'
+        
+        template = data_c.info_delivery_times
+        param_prazos = []
+
+        template["nuRequisicao"] = '1'
+        template["dtEvento"] = args[3]
+        template["cepOrigem"] = args[0]
+        template["cepDestino"] = args[1]
+        template["dataPostagem"]= args[2]
+            
+        for prod in types:
+            template["coProduto"] = str(prod)
+            param_prazos.append(template.copy())
+
+        api_model_prazos = {
+            "idLote": "1",
+            "parametrosPrazo": param_prazos      
+            }
+
+
+        response = requests.post(self.url, json = api_model_prazos, headers= self.header() )
+        if response.status_code == 200:
+            response_json = response.json()
+            return(response_json)
+        else:
+            print(response.text)
+            return None
+        
+        
+
+        
 
 
         
@@ -250,18 +325,22 @@ class pyCorreios:
 if __name__ == '__main__':
     from dotenv import dotenv_values
 
-    config = dotenv_values(".venv\.env")
+    config = dotenv_values(".env")
     
     user =config.get('USER')
     acess_token = config.get('ACESS_TOKEN')
     post_card = config.get('POST_CARD')
     contract = config.get('N_CONTRACT')
     token = config.get('token')
-    correios =pyCorreios(user, acess_token, post_card, contract,token)
+    correios =ApiClientCorreios(user, acess_token, post_card, contract,token)
     fresh_token1= correios.refresh_token()
     print(fresh_token1)
 
     a = correios.tracking_package('U','AA037090154BR', 'AV001914319BR')
+    # 03220 - SEDEX CONTRATO AG 
+    # 03298 - PAC CONTRATO AG 
+    # 04227 - CORREIOS MINI ENVIOS CTR AG
+    # b = correios.delivery_forecast(['03220', '03298', '04227'], '33110580', '33145160','05/04/2024', '05/04/2024')
     print(a)    
 
 
