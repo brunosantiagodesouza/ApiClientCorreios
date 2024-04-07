@@ -7,13 +7,14 @@ import data_defaults as data_c
 
 class ApiClientCorreios:
     default_url = 'https://api.correios.com.br/'
-    def __init__(self, user, acess_code, post_card, contract, token):
+    def __init__(self, user, acess_code, post_card, contract, token, nuDR):
         self.url = ''
         self.user =user
         self.acess_code = acess_code
         self.post_card = post_card
         self.contract = contract
         self.token = token 
+        self.nuDR =nuDR
         
 
     def refresh_token(self, mode='cartao_postagem'):
@@ -131,7 +132,7 @@ class ApiClientCorreios:
         return header 
         
     def tracking_package(self, query_type, *args):
-
+        
         """
         Realiza o rastreamento de pacotes de acordo com o tipo de consulta especificado.
 
@@ -307,19 +308,94 @@ class ApiClientCorreios:
             print(response.text)
             return None
         
+    def price_package(self, *args, **kwargs):
+
+        """
+    Calcula o preço do pacote com base nos parâmetros fornecidos.
+
+    Args:
+        *args (dict): Um dicionário contendo os parâmetros do pacote. Se houver apenas um argumento e for um dicionário,
+            assume-se que são os dados.
+        **kwargs (dict): Parâmetros de palavras-chave do pacote.
+
+    Returns:
+        dict or None: Um dicionário contendo os preços do pacote ou None se a solicitação não for bem-sucedida.
+
+    Raises:
+        ValueError: Se os argumentos não forem fornecidos corretamente.
+
+    Note:
+        Para obter resultados corretos, os seguintes parâmetros devem ser fornecidos:
+        - coProduto (lista): Lista de códigos de produto.
+        - cepOrigem (str): CEP de origem do pacote.
+        - psObjeto (str): Peso do pacote.
+        - tpObjeto (str): Tipo do objeto.
+        - altura (str): Altura do pacote.
+        - largura (str): Largura do pacote.
+        - comprimento (str): Comprimento do pacote.
+        - vlDeclarado (str, opcional): Valor declarado do pacote (opcional, necessário apenas se 'VD' estiver em servicosAdicionais).
+        - dtEvento (str): Data do evento.
+        - cepDestino (str): CEP de destino do pacote.
+        - servicosAdicionais (lista): Lista de códigos de serviços adicionais.
+
+    """
         
+        if len(args) == 1 and isinstance(args[0], dict):
+            # Se houver apenas um argumento e for um dicionário, podemos assumir que são os dados
+            dados = args[0]
+            
+        elif len(args) == 0:
+            # Se não houver argumentos posicionais, podemos usar os kwargs diretamente
+            dados = kwargs
 
+        else:
+            # Se não atendermos às condições anteriores, há algo errado com os argumentos
+            raise ValueError("Argumentos inválidos. Você deve fornecer uma lista, dicionário ou usar argumentos de palavras-chave.")
+
+        dados.update({'nuContrato': self.contract,'nuDR': self.nuDR })
+
+
+        self.url = f'{self.default_url}preco/v1/nacional'
+            
+        template = data_c.info_get_price
+        serv, adcs_serv = [dados.pop(x) for x in ('coProduto', 'servicosAdicionais')]
+        servicos = data_c.servicos
+        template.update(dados)
+
+        if not 'VD' in adcs_serv :
+            template.pop('vlDeclarado')
         
+        param_prices = []
 
+        for prod in serv:
 
+            template['coProduto'] = str(prod)
+            for service in servicos:
+
+                if service['cod'] == prod: 
+
+                    template['servicosAdicionais'] =[service['servicos_adicionais'].get(adc_serv) for adc_serv in adcs_serv]
+
+                    param_prices.append(template.copy())
+                    
+                    break
+            
+
+        api_model_precos = {
+            "idLote": "1",
+            "parametrosProduto": param_prices    
+            }
+
+        response = requests.post(self.url, json = api_model_precos, headers= self.header())
+
+        if response.status_code == 200:
+            resposta =[{'coProduto': r.get('coProduto'), 'preco': r.get('pcFinal')} for r in response.json()]
+            
+            return(resposta)
+        else:
+            print(response.text)
+            return None
         
-
-
-
-
-        
-        
-
 
 
 if __name__ == '__main__':
@@ -332,18 +408,25 @@ if __name__ == '__main__':
     post_card = config.get('POST_CARD')
     contract = config.get('N_CONTRACT')
     token = config.get('token')
-    correios =ApiClientCorreios(user, acess_token, post_card, contract,token)
+    correios =ApiClientCorreios(user, acess_token, post_card, contract,token, 20)
     fresh_token1= correios.refresh_token()
-    print(fresh_token1)
+    # print(fresh_token1)
 
-    a = correios.tracking_package('U','AA037090154BR', 'AV001914319BR')
+    # a = correios.tracking_package('U','AA037090154BR', 'AV001914319BR')
     # 03220 - SEDEX CONTRATO AG 
     # 03298 - PAC CONTRATO AG 
     # 04227 - CORREIOS MINI ENVIOS CTR AG
     # b = correios.delivery_forecast(['03220', '03298', '04227'], '33110580', '33145160','05/04/2024', '05/04/2024')
-    print(a)    
-
-
-    
-    
-
+    # print(a)
+    b = correios.price_package(coProduto =['03220','03298'],
+                           cepOrigem ='33110580', 
+                           psObjeto ='300', 
+                           tpObjeto ='2',
+                           altura='4',
+                           largura='12',
+                           comprimento='17', 
+                           vlDeclarado='50',
+                           dtEvento='06/04/2024', 
+                           cepDestino='33145160',
+                           servicosAdicionais=['RR'] )
+    print(b)
