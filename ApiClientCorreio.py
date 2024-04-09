@@ -267,7 +267,7 @@ class ApiClientCorreios:
 
         Example:
             # Exemplo de uso:
-            api = CorreiosAPI(api_key)
+            api = ApiClienteCorreio(...)
             forecast = api.delivery_forecast(['03220', '03298'], '01000-000', '04000-000', 
                                             '2024-04-04', '2024-04-05')
             if forecast:
@@ -311,34 +311,34 @@ class ApiClientCorreios:
     def price_package(self, *args, **kwargs):
 
         """
-    Calcula o preço do pacote com base nos parâmetros fornecidos.
+        Calcula o preço do pacote com base nos parâmetros fornecidos.
 
-    Args:
-        *args (dict): Um dicionário contendo os parâmetros do pacote. Se houver apenas um argumento e for um dicionário,
-            assume-se que são os dados.
-        **kwargs (dict): Parâmetros de palavras-chave do pacote.
+        Args:
+            *args (dict): Um dicionário contendo os parâmetros do pacote. Se houver apenas um argumento e for um dicionário,
+                assume-se que são os dados.
+            **kwargs (dict): Parâmetros de palavras-chave do pacote.
 
-    Returns:
-        dict or None: Um dicionário contendo os preços do pacote ou None se a solicitação não for bem-sucedida.
+        Returns:
+            dict or None: Um dicionário contendo os preços do pacote ou None se a solicitação não for bem-sucedida.
 
-    Raises:
-        ValueError: Se os argumentos não forem fornecidos corretamente.
+        Raises:
+            ValueError: Se os argumentos não forem fornecidos corretamente.
 
-    Note:
-        Para obter resultados corretos, os seguintes parâmetros devem ser fornecidos:
-        - coProduto (lista): Lista de códigos de produto.
-        - cepOrigem (str): CEP de origem do pacote.
-        - psObjeto (str): Peso do pacote.
-        - tpObjeto (str): Tipo do objeto.
-        - altura (str): Altura do pacote.
-        - largura (str): Largura do pacote.
-        - comprimento (str): Comprimento do pacote.
-        - vlDeclarado (str, opcional): Valor declarado do pacote (opcional, necessário apenas se 'VD' estiver em servicosAdicionais).
-        - dtEvento (str): Data do evento.
-        - cepDestino (str): CEP de destino do pacote.
-        - servicosAdicionais (lista): Lista de códigos de serviços adicionais.
+        Note:
+            Para obter resultados corretos, os seguintes parâmetros devem ser fornecidos:
+            - coProduto (lista): Lista de códigos de produto.
+            - cepOrigem (str): CEP de origem do pacote.
+            - psObjeto (str): Peso do pacote.
+            - tpObjeto (str): Tipo do objeto.
+            - altura (str): Altura do pacote.
+            - largura (str): Largura do pacote.
+            - comprimento (str): Comprimento do pacote.
+            - vlDeclarado (str, opcional): Valor declarado do pacote (opcional, necessário apenas se 'VD' estiver em servicosAdicionais).
+            - dtEvento (str): Data do evento.
+            - cepDestino (str): CEP de destino do pacote.
+            - servicosAdicionais (lista): Lista de códigos de serviços adicionais.
 
-    """
+            """
         
         if len(args) == 1 and isinstance(args[0], dict):
             # Se houver apenas um argumento e for um dicionário, podemos assumir que são os dados
@@ -396,6 +396,136 @@ class ApiClientCorreios:
             print(response.text)
             return None
         
+        
+    def pre_post_obj_reg(self, *args, **kwargs):
+
+        """Função pre_post_obj_reg
+
+        Esta função realiza o registro de uma pré-postagem para serviços postais dos correios. Ela recebe dados sobre a pré-postagem, 
+        tais como serviço, destinatário, remetente, peso, dimensões, entre outros parâmetros, e então envia esses dados 
+        para a API de pré-postagem para processamento.
+
+        Parâmetros:
+            - *args: Argumentos posicionais que podem conter os dados da pré-postagem sendo um dicionário.
+            - **kwargs: Argumentos de palavra-chave que podem conter os dados da pré-postagem como um dicionário.
+
+        Retorno:
+            - Retorna um dicionário contendo informações sobre o registro da pré-postagem se for bem-sucedido. Caso contrário, retorna None.
+
+        Comportamento:
+            - Se apenas um argumento posicional for fornecido, este será tratado como os dados da pré-postagem.
+            - Caso contrário, espera-se que os dados sejam fornecidos como argumentos de palavra-chave.
+            - Os dados fornecidos são usados para criar um modelo de pré-postagem que é enviado para a API.
+            - Se a resposta da API for bem-sucedida (código de status 200), são extraídas informações relevantes da resposta e retornadas.
+            - Caso contrário, imprime o texto da resposta de erro e retorna None.
+        
+        Exemplo:
+
+        destinatario= {
+        "nome": "LUIZ CARLOS",
+        "dddCelular": "31",
+        "celular": "999999999",
+        "cpfCnpj": "29939998207",
+        "endereco": {
+            "cep": "17217850",
+            "logradouro": "Rua dos Bobos",
+            "numero": "0",
+            "complemento": "casa",
+            "bairro": "Jardim Cial",
+            "cidade": "São Paulo",
+            "uf": "SP"
+            }
+        }
+
+        remetente = destinatario
+
+        dados_pre_postagem = {'servico': '03298',
+                            'codigosServicosAdicionais': ['RR', 'VD'],
+                            'destinatario': destinatario,
+                            'remetente': remetente,
+                            'valorDeclarado': '214.10',
+                            'nNFe': '349',
+                            'chNfe': '31241441856872000179550010000003491717558899',
+                            'pesoInformado': '460',
+                            'altura': '4',
+                            'largura': '12',
+                            'comprimento': '17',
+                            'coleta': 'N',
+                            'dataPrevistaPostagem': '10/04/2024',
+                            'pagamento': '2',
+                            'reversa': 'N',
+                            }
+
+        correios.pre_post_obj_reg(dados_pre_postagem)
+    """
+
+        if len(args)==1 and isinstance(args[0], dict):
+            dados = args[0]
+        else:
+            dados = kwargs
+
+        self.url = f'{self.default_url}prepostagem/v1/prepostagens'
+        servicos_adc = data_c.servicos
+        for service in servicos_adc:
+
+            if service['cod'] == dados.get('servico'): 
+                serv_adc =[]
+                for adc_serv in dados.get('codigosServicosAdicionais'):
+
+                    if adc_serv== 'VD' and dados.get("valorDeclarado")!= None:
+                    
+                        serv_adc.append({"codigoServicoAdicional":service['servicos_adicionais'].get(adc_serv),
+                                         "valorDeclarado": dados.get('valorDeclarado')})
+                        
+                    elif adc_serv=='EV' and dados.get('orientacaoEntregaVizinho') != None:
+                        serv_adc.append({"codigoServicoAdicional":service['servicos_adicionais'].get(adc_serv),
+                                         "orientacaoEntregaVizinho":dados.get('orientacaoEntregaVizinho')})
+                    else:
+                        serv_adc.append({"codigoServicoAdicional":service['servicos_adicionais'].get(adc_serv)})
+
+
+                    
+                break
+
+
+
+
+
+        template = data_c.pre_postagem
+        template.update({'destinatario': dados.get('destinatario'), 
+                         'remetente': dados.get('remetente'), 
+                         'codigoServico':dados.get('servico'),
+                         'numeroNotaFiscal': dados.get('nNFe'),
+                         'chaveNFe':dados.get('chNfe'),
+                         'numeroCartaoPostagem': self.post_card,
+                         'listaServicoAdicional':serv_adc,
+                         'pesoInformado':dados.get('pesoInformado'),
+                         'alturaInformada': dados.get('altura'),
+                         'larguraInformada': dados.get('largura'),
+                         'comprimentoInformado': dados.get('comprimento'),
+                         'solicitarColeta': dados.get('coleta'),
+                         'dataPrevistaPostagem':dados.get('dataPrevistaPostagem'),
+                         'modalidadePagamento': dados.get('pagamento'),
+                         'logisticaReversa': dados.get('reversa')
+                        } 
+                        )
+        
+        response = requests.post(self.url, json = template, headers= self.header())
+        if response.status_code == 200:
+            resposta ={}
+            
+            resposta.update({x:response.json().get(x) for x in ('id', 'codigoServico', 'numeroNotaFiscal', 'codigoObjeto', 'dataHora')})
+
+            
+            return(resposta)
+        else:
+            print(response.text)
+            return None
+        
+  
+
+
+        
 
 
 if __name__ == '__main__':
@@ -418,15 +548,54 @@ if __name__ == '__main__':
     # 04227 - CORREIOS MINI ENVIOS CTR AG
     # b = correios.delivery_forecast(['03220', '03298', '04227'], '33110580', '33145160','05/04/2024', '05/04/2024')
     # print(a)
-    b = correios.price_package(coProduto =['03220','03298'],
-                           cepOrigem ='33110580', 
-                           psObjeto ='300', 
-                           tpObjeto ='2',
-                           altura='4',
-                           largura='12',
-                           comprimento='17', 
-                           vlDeclarado='50',
-                           dtEvento='06/04/2024', 
-                           cepDestino='33145160',
-                           servicosAdicionais=['RR'] )
-    print(b)
+    # b = correios.price_package(coProduto =['03220','03298'],
+    #                        cepOrigem ='33110580', 
+    #                        psObjeto ='300', 
+    #                        tpObjeto ='2',
+    #                        altura='4',
+    #                        largura='12',
+    #                        comprimento='17', 
+    #                        vlDeclarado='50',
+    #                        dtEvento='06/04/2024', 
+    #                        cepDestino='33145160',
+    #                        servicosAdicionais=['RR'] )
+    
+    destinatario= {
+    "nome": "LUIZ CARLOS",
+    "dddCelular": "31",
+    "celular": "999999999",
+    "cpfCnpj": "29939998207",
+    "endereco": {
+        "cep": "17217850",
+        "logradouro": "Rua dos Bobos",
+        "numero": "0",
+        "complemento": "casa",
+        "bairro": "Jardim Cial",
+        "cidade": "São Paulo",
+        "uf": "SP"
+        }
+    }
+
+    remetente = json.loads(config.get('REMETENTE'))
+
+
+    dados_pre_postagem = {'servico': '03298',
+                        'codigosServicosAdicionais': ['RR', 'VD'],
+                        'destinatario': destinatario,
+                        'remetente': remetente,
+                        'valorDeclarado': '214.10',
+                        'nNFe': '349',
+                        'chNfe': '31241441856872000179550010000003491717558899',
+                        'pesoInformado': '460',
+                        'altura': '4',
+                        'largura': '12',
+                        'comprimento': '17',
+                        'coleta': 'N',
+                        'dataPrevistaPostagem': '10/04/2024',
+                        'pagamento': '2',
+                        'reversa': 'N',
+                        }
+
+    a =correios.pre_post_obj_reg(dados_pre_postagem)
+    print(a)
+

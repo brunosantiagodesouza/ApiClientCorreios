@@ -283,3 +283,65 @@ servicos =[
     },
     
 ]
+
+
+
+
+
+
+pre_postagem = {
+  "idCorreios": "41856872000133",
+    "remetente": {
+    "nome": "41.856.872 ANDRE VINICIUS DIOGO TINOCO",
+    "dddCelular": "31",
+    "celular": "985288995",
+    "cpfCnpj": "41856872000133",
+    "endereco": {
+        "cep": "33105260",
+        "logradouro": "RUA CECILIA DE SOUZA",
+        "numero": "87",
+        "complemento": "",
+        "bairro": "CONJUNTO CRISTINA",
+        "cidade": "SANTA LUZIA",
+        "uf": "MG"
+        }
+    },
+    "destinatario": {
+        "nome": "Carolina Quadros",
+        "dddCelular": "17",
+        "celular": "998125456",
+        "cpfCnpj": "07669803754",
+    "endereco": {
+        "cep": "15063190",
+        "logradouro": "Avenida Nívea Dulce Tedeschi Conforti",
+        "numero": "2500",
+        "complemento": "Casa D 28",
+        "bairro": "Village Imperial Residence",
+        "cidade": "São José do Rio Preto",
+        "uf": "SP"
+    }
+    },
+    "codigoServico": "04227",
+    "numeroNotaFiscal": "344",
+    "numeroCartaoPostagem": "0078363691",
+    "chaveNFe": "31240441856872000133550010000003441613946880",
+    "listaServicoAdicional": [
+        {
+            "codigoServicoAdicional": "025"
+        },
+        {
+            "codigoServicoAdicional":"065" ,
+            "valorDeclarado": "51.70"
+        }
+    ],
+    "pesoInformado": "300",
+    "codigoFormatoObjetoInformado": "2",
+    "alturaInformada": "4",
+    "larguraInformada": "12",
+    "comprimentoInformado": "17",  
+    "cienteObjetoNaoProibido": "1",
+    "solicitarColeta": "N",
+    "dataPrevistaPostagem": "09/04/2024",
+    "modalidadePagamento": "2",
+    "logisticaReversa": "N"
+}
